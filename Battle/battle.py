@@ -352,12 +352,6 @@ for episode in range(num_episodes):
 		draw_text(str(knight.potions), font, red, 150, screen_height - bottom_panel + 70)
 
 
-		# Choose an action
-		state = encode_state(knight.hp, knight.potions, bandit1.hp, bandit2.hp, current_fighter)
-		action = choose_action(state, epsilon)
-
-		states.append(state)
-		actions.append(action)
 
 
 		if game_over == 0:
@@ -367,17 +361,26 @@ for episode in range(num_episodes):
 					action_cooldown += 1
 					if action_cooldown >= action_wait_time:
 
+						# Choose an action
+						state = encode_state(knight.hp, knight.potions, bandit1.hp, bandit2.hp, current_fighter)
+						action_id = choose_action(state, epsilon)
+
 						# Get the next action and target from the predefined actions and targets
-						action, target_index = actions_and_targets[action]
-						print(action, target_index)
+						action, target_index = actions_and_targets[action_id]
 
 						if action == 'attack':
 							# Select a bandit to attack
 							target = bandit_list[target_index]
 							if target.alive == True:
 								attack = True
+								states.append(state)
+								actions.append(action_id)
+								print(action, target_index)
 						elif action == 'potion':
 							potion = True
+							states.append(state)
+							actions.append(action_id)
+							print(action, target_index)
 
 						#look for player action
 						#attack
