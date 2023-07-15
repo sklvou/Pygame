@@ -254,31 +254,24 @@ restart_button = button.Button(screen, 330, 120, restart_img, 120, 30)
 
 
 # all action list
-actions_and_targets = [('attack', 0), ('attack', 1), ('potion', None)]
-
-# state
+actions_and_targets = [('potion', None), ('attack', 0), ('attack', 1)]
+# state (HPやポーションの状態をそれぞれ2値化)
 def encode_state(knight_hp, num_potions, bandit1_hp, bandit2_hp, current_fighter):
-    # Define the maximum values for each variable
-    max_knight_hp = 30 
-    max_num_potions = 3
-    max_bandit_hp = 20
-    max_current_fighter = 3
+    # Binary encoding of the state variables
+    knight_hp_bin = 1 if knight_hp > 15 else 0
+    num_potions_bin = 1 if num_potions > 0 else 0
+    bandit1_hp_bin = 1 if bandit1_hp > 10 else 0
+    bandit2_hp_bin = 1 if bandit2_hp > 10 else 0
 
-    # Encode each variable as an integer
-    i_knight_hp = int(knight_hp)
-    i_num_potions = int(num_potions)
-    i_bandit1_hp = int(bandit1_hp)
-    i_bandit2_hp = int(bandit2_hp)
-    i_current_fighter = int(current_fighter)
-
-    # Combine the integers into one large integer
-    state = (i_knight_hp * (max_num_potions + 1) * (max_bandit_hp + 1) ** 2 * (max_current_fighter + 1) +
-             i_num_potions * (max_bandit_hp + 1) ** 2 * (max_current_fighter + 1) +
-             i_bandit1_hp * (max_bandit_hp + 1) * (max_current_fighter + 1) +
-             i_bandit2_hp * (max_current_fighter + 1) +
-             i_current_fighter)
+    # Combine the binary variables into one integer
+    state = (knight_hp_bin * 2**4 +
+             num_potions_bin * 2**3 +
+             bandit1_hp_bin * 2**2 +
+             bandit2_hp_bin * 2**1 +
+             current_fighter)  # Assuming current_fighter is 0 or 1
 
     return state
+
 
 
 # Number of states and actions
@@ -452,9 +445,11 @@ for episode in range(num_episodes):
 			if game_over == 1:
 				screen.blit(victory_img, (250, 50))
 				reward = 1
+				time.sleep(0.5)
 			if game_over == -1:
 				screen.blit(defeat_img, (290, 50))
 				reward = -1
+				time.sleep(0.5)
 			#if restart_button.draw():
 			knight.reset()
 			for bandit in bandit_list:
