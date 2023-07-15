@@ -8,7 +8,7 @@ import sys
 pygame.init()
 
 clock = pygame.time.Clock()
-fps = 120
+fps = 200
 
 #game window
 bottom_panel = 150
@@ -23,7 +23,7 @@ pygame.display.set_caption('Battle')
 current_fighter = 1
 total_fighters = 3
 action_cooldown = 0
-action_wait_time = 15
+action_wait_time = 10
 attack = False
 potion = False
 potion_effect = 15
@@ -237,7 +237,9 @@ damage_text_group = pygame.sprite.Group()
 
 # x, y, name, max_hp, strength, potions
 knight = Fighter(200, 260, 'Knight', 30, 10, 3)
-bandit1 = Fighter(550, 270, 'Bandit', 20, 8, 1)
+#bandit1 = Fighter(550, 270, 'Bandit', 5, 35, 1)
+#bandit2 = Fighter(700, 270, 'Bandit', 20, 12, 1)
+bandit1 = Fighter(550, 270, 'Bandit', 20, 12, 1)
 bandit2 = Fighter(700, 270, 'Bandit', 5, 35, 1)
 
 bandit_list = []
@@ -255,7 +257,8 @@ restart_button = button.Button(screen, 330, 120, restart_img, 120, 30)
 
 
 # all action list
-actions_and_targets = [('potion', None), ('attack', 0), ('attack', 1)]
+#actions_and_targets = [('potion', None), ('attack', 0), ('attack', 1)]
+actions_and_targets = [('attack', 0), ('attack', 1), ('potion', None)]
 # state (HPやポーションの状態をそれぞれ2値化)
 def encode_state(knight_hp, num_potions, bandit1_hp, bandit2_hp, current_fighter):
     # Binary encoding of the state variables
@@ -302,7 +305,7 @@ def choose_action(state, epsilon):
 alpha = 0.5  # Learning rate
 gamma = 0.95  # Discount factor
 epsilon = 0.1  # Exploration rate
-num_episodes = 50  # Number of games to play
+num_episodes = 150  # Number of games to play
 
 # Main loop for Q-learning
 for episode in range(num_episodes):
