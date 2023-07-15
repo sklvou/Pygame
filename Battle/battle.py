@@ -7,7 +7,7 @@ import numpy as np
 pygame.init()
 
 clock = pygame.time.Clock()
-fps = 60
+fps = 600
 
 #game window
 bottom_panel = 150
@@ -279,7 +279,8 @@ max_knight_hp = 30
 max_num_potions = 3
 max_bandit_hp = 20
 max_current_fighter = 3
-num_states = (max_knight_hp + 1) * (max_num_potions + 1) * (max_bandit_hp + 1) ** 2 * (max_current_fighter + 1) - 1
+#num_states = (max_knight_hp + 1) * (max_num_potions + 1) * (max_bandit_hp + 1) ** 2 * (max_current_fighter + 1) - 1
+num_states = 32
 num_actions = len(actions_and_targets)
 
 # Initialize Q-table with zeros
@@ -370,10 +371,11 @@ for episode in range(num_episodes):
 								actions.append(action_id)
 								print(action, target_index)
 						elif action == 'potion':
-							potion = True
-							states.append(state)
-							actions.append(action_id)
-							print(action, target_index)
+							if knight.potions > 0:
+								potion = True
+								states.append(state)
+								actions.append(action_id)
+								print(action, target_index)
 
 						#look for player action
 						#attack
@@ -445,11 +447,15 @@ for episode in range(num_episodes):
 			if game_over == 1:
 				screen.blit(victory_img, (250, 50))
 				reward = 1
-				time.sleep(0.5)
+				print("win")
 			if game_over == -1:
 				screen.blit(defeat_img, (290, 50))
 				reward = -1
-				time.sleep(0.5)
+				print("lose")
+			
+			# Update the display and wait for 0.2 second
+			pygame.display.flip()
+			pygame.time.delay(200)
 			#if restart_button.draw():
 			knight.reset()
 			for bandit in bandit_list:
