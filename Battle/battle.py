@@ -3,11 +3,12 @@ import random
 import button
 import time
 import numpy as np
+import sys
 
 pygame.init()
 
 clock = pygame.time.Clock()
-fps = 600
+fps = 120
 
 #game window
 bottom_panel = 150
@@ -22,7 +23,7 @@ pygame.display.set_caption('Battle')
 current_fighter = 1
 total_fighters = 3
 action_cooldown = 0
-action_wait_time = 90
+action_wait_time = 15
 attack = False
 potion = False
 potion_effect = 15
@@ -150,9 +151,9 @@ class Fighter():
 
 	def attack(self, target):
 		#deal damage to enemy
-		# rand = random.randint(-5, 5)
-		#damage = self.strength + rand
-		damage = self.strength
+		rand = random.randint(-2, 2)
+		damage = self.strength + rand
+		# damage = self.strength
 		target.hp -= damage
 		#run enemy hurt animation
 		target.hurt()
@@ -236,8 +237,8 @@ damage_text_group = pygame.sprite.Group()
 
 # x, y, name, max_hp, strength, potions
 knight = Fighter(200, 260, 'Knight', 30, 10, 3)
-bandit1 = Fighter(550, 270, 'Bandit', 20, 6, 1)
-bandit2 = Fighter(700, 270, 'Bandit', 20, 6, 1)
+bandit1 = Fighter(550, 270, 'Bandit', 20, 8, 1)
+bandit2 = Fighter(700, 270, 'Bandit', 5, 35, 1)
 
 bandit_list = []
 bandit_list.append(bandit1)
@@ -301,7 +302,7 @@ def choose_action(state, epsilon):
 alpha = 0.5  # Learning rate
 gamma = 0.95  # Discount factor
 epsilon = 0.1  # Exploration rate
-num_episodes = 3  # Number of games to play
+num_episodes = 50  # Number of games to play
 
 # Main loop for Q-learning
 for episode in range(num_episodes):
@@ -470,6 +471,7 @@ for episode in range(num_episodes):
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				run = False
+				sys.exit()
 			if event.type == pygame.MOUSEBUTTONDOWN:
 				clicked = True
 			else:
@@ -484,5 +486,6 @@ for episode in range(num_episodes):
 		G = gamma * G + reward
 		Q_table[states[t], actions[t]] = (1 - alpha) * Q_table[states[t], actions[t]] + alpha * G
 
+#time.sleep(5)
 pygame.quit()
 
