@@ -4,6 +4,11 @@ import button
 import time
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
+
+# Set the seed value
+random.seed(32)
+np.random.seed(32)
 
 pygame.init()
 
@@ -23,7 +28,7 @@ pygame.display.set_caption('Battle')
 current_fighter = 1
 total_fighters = 3
 action_cooldown = 0
-action_wait_time = 10
+action_wait_time = 1 # 小さくすると早くなる
 attack = False
 potion = False
 potion_effect = 15
@@ -239,7 +244,7 @@ damage_text_group = pygame.sprite.Group()
 knight = Fighter(200, 260, 'Knight', 30, 10, 3)
 #bandit1 = Fighter(550, 270, 'Bandit', 5, 35, 1)
 #bandit2 = Fighter(700, 270, 'Bandit', 20, 12, 1)
-bandit1 = Fighter(550, 270, 'Bandit', 20, 12, 1)
+bandit1 = Fighter(550, 270, 'Bandit', 20, 10, 1)
 bandit2 = Fighter(700, 270, 'Bandit', 5, 35, 1)
 
 bandit_list = []
@@ -305,7 +310,10 @@ def choose_action(state, epsilon):
 alpha = 0.5  # Learning rate
 gamma = 0.95  # Discount factor
 epsilon = 0.1  # Exploration rate
-num_episodes = 150  # Number of games to play
+num_episodes = 200  # Number of games to play
+
+# 描画用の報酬の総和
+cumulative_rewards = [0]
 
 # Main loop for Q-learning
 for episode in range(num_episodes):
@@ -460,7 +468,11 @@ for episode in range(num_episodes):
 			# Update the display and wait for 0.2 second
 			pygame.display.flip()
 			pygame.time.delay(200)
-			#if restart_button.draw():
+			
+			# At the end of the episode, add the reward to the cumulative reward
+			cumulative_reward = cumulative_rewards[-1] + reward
+			cumulative_rewards.append(cumulative_reward)
+
 			knight.reset()
 			for bandit in bandit_list:
 				bandit.reset()
@@ -488,6 +500,15 @@ for episode in range(num_episodes):
 	for t in reversed(range(len(states))):
 		G = gamma * G + reward
 		Q_table[states[t], actions[t]] = (1 - alpha) * Q_table[states[t], actions[t]] + alpha * G
+
+
+# After all episodes are done, plot the rewards
+plt.plot(cumulative_rewards)
+plt.title('Cumulative reward over time')
+plt.xlabel('Episode')
+plt.ylabel('Cumulative Reward')
+# Save the figure to a file
+plt.savefig('rewards.png')
 
 #time.sleep(5)
 pygame.quit()
