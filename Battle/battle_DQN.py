@@ -512,12 +512,10 @@ for episode in range(num_episodes):
 		draw_text(str(knight.potions), font, red, 150, screen_height - bottom_panel + 70)
 
 
-
-
 		if game_over == 0:
 			#player action
 			if knight.alive == True:
-				if current_fighter == 1:
+				if current_fighter == 0:
 					action_cooldown += 1
 					if action_cooldown >= action_wait_time:
 
@@ -649,12 +647,6 @@ for episode in range(num_episodes):
 
 		pygame.display.update()
 	
-	# Backpropagate the reward
-	print("reward: ", reward)
-	G = 0
-	for t in reversed(range(len(states))):
-		G = gamma * G + reward
-		Q_table[states[t], actions[t]] = (1 - alpha) * Q_table[states[t], actions[t]] + alpha * G
 
 
 # After all episodes are done, plot the rewards
