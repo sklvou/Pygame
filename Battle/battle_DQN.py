@@ -6,8 +6,8 @@ import math
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 from collections import namedtuple, deque
 import torch
 from torch import nn
@@ -303,13 +303,14 @@ class BattleEnv(gym.Env):
         # They must be gym.spaces objects
         # Example when using discrete actions, Box for continuous
         self.action_space = spaces.Discrete(num_actions)  # [('attack', 0), ('attack', 1), ('potion', None)]
-        self.observation_space = spaces.Tuple((
-            spaces.Discrete(max_knight_hp),  # Player HP
-            spaces.Discrete(max_num_potions),   # Player potion count
-            spaces.Discrete(max_bandit1_hp),  # Enemy 1 HP
-            spaces.Discrete(max_bandit2_hp),  # Enemy 2 HP
-            spaces.Discrete(max_current_fighter)))   # Whose turn: 0 for player, 1 for enemy 1, 2 for enemy 2
 	
+        self.observation_space = spaces.Tuple((
+			spaces.Discrete(max_knight_hp + 1),  # Player HP
+			spaces.Discrete(max_num_potions + 1),   # Player potion count
+			spaces.Discrete(max_bandit1_hp + 1),  # Enemy 1 HP
+			spaces.Discrete(max_bandit2_hp + 1),  # Enemy 2 HP
+			spaces.Discrete(max_current_fighter)))   # Whose turn: 0 for player, 1 for enemy 1, 2 for enemy 2
+
 		# Initialize state
         self.knight_hp = max_knight_hp
         self.num_potions = max_num_potions
@@ -381,9 +382,12 @@ MEMORY_SIZE = 10000
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 env = BattleEnv()  # Use the custom environment
 
+
 # Get number of actions and observations from gym action space
 n_actions = env.action_space.n
-n_observations = env.observation_space.shape[0]
+state = env.reset()
+n_observations = len(state)
+print(n_observations)
 
 # Initialize action-value function Q with random weights
 policy_net = DQN(n_observations, n_actions).to(device) # ターゲットQ値を計算するためのネットワーク
