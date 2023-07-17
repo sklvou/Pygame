@@ -53,7 +53,7 @@ pygame.display.set_caption('Battle')
 current_fighter = 0
 total_fighters = 3
 action_cooldown = 0
-action_wait_time = 20 # 小さくすると早くなる
+action_wait_time = 1 # 小さくすると早くなる
 attack = False
 potion = False
 potion_effect = 15
@@ -308,15 +308,15 @@ class BattleEnv(gym.Env):
 			spaces.Discrete(max_knight_hp + 1),  # Player HP
 			spaces.Discrete(max_num_potions + 1),   # Player potion count
 			spaces.Discrete(max_bandit1_hp + 1),  # Enemy 1 HP
-			spaces.Discrete(max_bandit2_hp + 1),  # Enemy 2 HP
-			spaces.Discrete(max_current_fighter)))   # Whose turn: 0 for player, 1 for enemy 1, 2 for enemy 2
+			spaces.Discrete(max_bandit2_hp + 1))) # Enemy 2 HP
+			# spaces.Discrete(max_current_fighter)))   # Whose turn: 0 for player, 1 for enemy 1, 2 for enemy 2
 
 		# Initialize state
         self.knight_hp = max_knight_hp
         self.num_potions = max_num_potions
         self.bandit1_hp = max_bandit1_hp
         self.bandit2_hp = max_bandit2_hp
-        self.current_fighter = 0
+        #self.current_fighter = 0
 
 
     def step(self, action):
@@ -330,8 +330,8 @@ class BattleEnv(gym.Env):
         self.num_potions = max_num_potions
         self.bandit1_hp = max_bandit1_hp
         self.bandit2_hp = max_bandit2_hp
-        self.current_fighter = 0
-        return np.array([self.knight_hp, self.num_potions, self.bandit1_hp, self.bandit2_hp, self.current_fighter])
+        #self.current_fighter = 0
+        return np.array([self.knight_hp, self.num_potions, self.bandit1_hp, self.bandit2_hp])
 
     def render(self, mode='human'):
         # Render the environment to the screen (optional)
@@ -339,7 +339,7 @@ class BattleEnv(gym.Env):
 
 # Transition（遷移） - （状態、アクション）のペアを（next_state、報酬）の結果にマッピング
 Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward'))
+                        ('state', 'action', 'next_state', 'reward', 'done'))
 
 # 過去の経験を保存するクラス
 class ReplayMemory:
@@ -378,6 +378,7 @@ EPS_DECAY = 200
 TARGET_UPDATE = 10
 LEARNING_RATE = 0.001
 MEMORY_SIZE = 10000
+TAU = 0.005
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 env = BattleEnv()  # Use the custom environment
@@ -465,13 +466,14 @@ def optimize_model():
 cumulative_rewards = [0]
 
 # Main loop for DQN
-num_episodes = 50
+num_episodes = 200
 for episode in range(num_episodes):
 	run = True
 	states = []
 	actions = []
 
 	while run:
+		done = False
 
 		clock.tick(fps)
 
@@ -520,7 +522,7 @@ for episode in range(num_episodes):
 					if action_cooldown >= action_wait_time:
 
 						# Choose an action. 確定でない（いないターゲットを選択など）ため、stateは仮置き
-						state = np.array([knight.hp, knight.potions, bandit1.hp, bandit2.hp, current_fighter])
+						state = np.array([knight.hp, knight.potions, bandit1.hp, bandit2.hp])
 						state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 						action_id = select_action(state)
 						action, target_index = actions_and_targets[action_id]
@@ -592,10 +594,44 @@ for episode in range(num_episodes):
 								action_cooldown = 0
 					else:
 						current_fighter += 1
+			#print("current_fighter: ", current_fighter)
 
 			#if all fighters have had a turn then reset
-			if current_fighter > total_fighters:
+			if current_fighter > total_fighters - 1:
+				# 次の状態
+				next_state = np.array([knight.hp, knight.potions, bandit1.hp, bandit2.hp])
+				next_state = torch.tensor(next_state, dtype=torch.float32, device=device).unsqueeze(0)
+				print("next_state: ", next_state)
+
+				# 報酬
+				if knight.hp < 1 :
+					reward = -1
+					done = True
+				elif bandit1.hp < 1 and bandit2.hp < 1:
+					reward = -1
+					done = True
+				else:
+					reward = 0
+				reward_cpu = reward
+				reward = torch.tensor([reward], device=device)
+
+				# Store the transition in memory
+				memory.push(state, action_id, next_state, reward, done)
+
+				print("memory: ", state, action_id, next_state, reward)
+
 				current_fighter = 0
+
+			# Perform one step of the optimization (on the policy network)
+			optimize_model()
+
+			# Soft update of the target network's weights
+			# θ′ ← τ θ + (1 −τ )θ′
+			target_net_state_dict = target_net.state_dict()
+			policy_net_state_dict = policy_net.state_dict()
+			for key in policy_net_state_dict:
+				target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+			target_net.load_state_dict(target_net_state_dict)
 
 
 		#check if all bandits are dead
@@ -611,11 +647,9 @@ for episode in range(num_episodes):
 		if game_over != 0:
 			if game_over == 1:
 				screen.blit(victory_img, (250, 50))
-				reward = 1
 				print("win")
 			if game_over == -1:
 				screen.blit(defeat_img, (290, 50))
-				reward = -1
 				print("lose")
 			
 			# Update the display and wait for 0.2 second
@@ -623,7 +657,7 @@ for episode in range(num_episodes):
 			pygame.time.delay(200)
 			
 			# At the end of the episode, add the reward to the cumulative reward
-			cumulative_reward = cumulative_rewards[-1] + reward
+			cumulative_reward = cumulative_rewards[-1] + reward_cpu
 			cumulative_rewards.append(cumulative_reward)
 
 			knight.reset()
@@ -655,7 +689,7 @@ plt.title('Cumulative reward over time')
 plt.xlabel('Episode')
 plt.ylabel('Cumulative Reward')
 # Save the figure to a file
-plt.savefig('rewards.png')
+plt.savefig('rewards_DQN.png')
 
 #time.sleep(5)
 pygame.quit()
