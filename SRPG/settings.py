@@ -1,0 +1,4 @@
+# 画面とタイルの設定
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+TILE_SIZE = 40
