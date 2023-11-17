@@ -37,9 +37,18 @@ class Character:
                     move_positions.append((self.x + dx, self.y + dy))
         return move_positions
 
-    def get_attack_range(self, move_range=3):
-        """ 攻撃可能範囲を返す（移動範囲+1）"""
+    """def get_attack_range(self, move_range=3):
+        # 攻撃可能範囲を返す（移動範囲+1）
         attack_range = move_range + 1
+        attack_positions = []
+        for dx in range(-attack_range, attack_range + 1):
+            for dy in range(-attack_range, attack_range + 1):
+                if abs(dx) + abs(dy) <= attack_range:
+                    attack_positions.append((self.x + dx, self.y + dy))
+        return attack_positions"""
+
+    def get_attack_range(self, attack_range=1):
+        """ 攻撃可能範囲を返す """
         attack_positions = []
         for dx in range(-attack_range, attack_range + 1):
             for dy in range(-attack_range, attack_range + 1):
