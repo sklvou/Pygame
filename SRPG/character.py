@@ -5,8 +5,8 @@ from map import load_and_scale_img
 
 class Character:
     def __init__(self, x, y, img_path):
-        self.x = x
-        self.y = y
+        self.x = self.initial_x = x
+        self.y = self.initial_y = y
         self.image = load_and_scale_img(img_path, TILE_SIZE)
         self.rect = self.image.get_rect(topleft=(self.x * TILE_SIZE, self.y * TILE_SIZE))
         self.has_moved = False
@@ -23,6 +23,10 @@ class Character:
             self.has_moved = True
     
     def reset_movement(self):
+        self.x = self.initial_x
+        self.y = self.initial_y
+        self.rect.x = self.x * TILE_SIZE
+        self.rect.y = self.y * TILE_SIZE
         self.has_moved = False
 
     def is_clicked(self, mouse_pos):

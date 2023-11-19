@@ -66,18 +66,22 @@ while running:
                 if menu.rect.collidepoint(mouse_pos):
                     menu_selection = menu.get_selection(mouse_pos)
                     # メニューの選択処理
-                    if menu_selection == "攻撃":
+                    if menu_selection == "Attack":
                         # 攻撃の処理
                         pass
-                    elif menu_selection == "待機":
+                    elif menu_selection == "State":
                         # 待機の処理
                         pass
-                    elif menu_selection == "キャンセル":
+                    elif menu_selection == "Cancel":
                         # キャンセルの処理
-                        pass
+                        if selected_character:
+                            selected_character.reset_movement()
+                        selected_character = None  # 選択を解除する
                     show_menu = False
-                    selected_character.has_moved = True  # キャラクターの行動を完了とする
-                    selected_character = None  # 選択を解除する
+                    # キャンセル以外の選択時のみ、ここで選択を解除
+                    if menu_selection != "Cancel":
+                        selected_character.has_moved = True  # キャラクターの行動を完了とする
+                        selected_character = None  # 選択を解除する
                 continue  # メニュー表示中は他の処理をスキップ
 
         # プレイヤーターン
@@ -90,10 +94,13 @@ while running:
                     for player in players:
                         # キャラクター選択
                         if selected_character is None and player.is_clicked(mouse_pos) and not player.has_moved:
+                        #if player.is_clicked(mouse_pos) and not player.has_moved:
                             selected_character = player
+                            player.initial_x = player.x
+                            player.initial_y = player.y
                             move_range = player.get_move_range()
                             attack_range = player.get_attack_range()
-                            #character_has_moved = False  # 移動していない状態にリセット
+                            character_has_moved = False  # 移動していない状態にリセット
 
                         # キャラクターが選択されていて、移動範囲内がクリックされた場合
                         elif selected_character == player and grid_pos in move_range:
@@ -101,19 +108,6 @@ while running:
                             move_range = []
                             attack_range = []
                             character_has_moved = True  # キャラクターが移動した
-
-                        """# 攻撃処理
-                        if selected_character and event.type == pygame.MOUSEBUTTONDOWN:
-                            mouse_pos = pygame.mouse.get_pos()
-                            grid_pos = mouse_pos[0] // TILE_SIZE, mouse_pos[1] // TILE_SIZE
-
-                            # 攻撃範囲のチェック
-                            if grid_pos in attack_range:
-                                # 攻撃対象の選定と攻撃の実行
-                                for enemy in enemies:
-                                    if (enemy.x, enemy.y) == grid_pos:
-                                        selected_character.attack(enemy)
-                                        break"""
 
                 # 移動が完了した後にメニューを表示
                 if character_has_moved and not show_menu and selected_character:
