@@ -4,9 +4,10 @@ from settings import TILE_SIZE
 from map import load_and_scale_img
 
 class Character:
-    def __init__(self, x, y, img_path):
+    def __init__(self, x, y, img_path, name):
         self.x = self.initial_x = x
         self.y = self.initial_y = y
+        self.name = name
         self.image = load_and_scale_img(img_path, TILE_SIZE)
         self.rect = self.image.get_rect(topleft=(self.x * TILE_SIZE, self.y * TILE_SIZE))
         self.has_moved = False
@@ -22,11 +23,14 @@ class Character:
             self.rect.y = self.y * TILE_SIZE
             self.has_moved = True
     
-    def reset_movement(self):
+    def cancel_movement(self):
         self.x = self.initial_x
         self.y = self.initial_y
         self.rect.x = self.x * TILE_SIZE
         self.rect.y = self.y * TILE_SIZE
+        self.has_moved = False
+    
+    def reset_movement(self):
         self.has_moved = False
 
     def is_clicked(self, mouse_pos):
@@ -68,8 +72,8 @@ class Character:
 
 
 class Enemy(Character):
-    def __init__(self, x, y, img_path):
-        super().__init__(x, y, img_path)
+    def __init__(self, x, y, img_path, name):
+        super().__init__(x, y, img_path, name)
 
     def random_move(self, grid_width, grid_height):
         # ランダムな方向を選択（上、下、左、右）

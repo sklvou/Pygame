@@ -31,11 +31,11 @@ is_player_turn = True  # プレイヤーターンであるかどうかのフラ�
 
 # キャラクターのインスタンスを作成
 players = [
-    Character(2, 2, 'img/character/brave.png'),
-    Character(3, 3, 'img/character/brave.png')  # 追加のキャラクター
+    Character(2, 2, 'img/character/brave.png', 'Yuusya A'),
+    Character(3, 3, 'img/character/brave.png', 'Yuusya B'),
 ]
 enemies = [
-    Enemy(5, 5, 'img/character/skeleton.png'),
+    Enemy(5, 5, 'img/character/skeleton.png', 'Skeleton A'),
     # 他のエネミーキャラクターもここに追加
 ]
 
@@ -52,6 +52,8 @@ show_menu = False
 menu = None
 selected_character = None
 character_has_moved = False  # キャラクターが移動したかどうかのフラグを追加
+enemy_selection_menu = None
+
 
 while running:
     # イベント処理
@@ -66,22 +68,33 @@ while running:
                 if menu.rect.collidepoint(mouse_pos):
                     menu_selection = menu.get_selection(mouse_pos)
                     # メニューの選択処理
-                    if menu_selection == "Attack":
-                        # 攻撃の処理
-                        pass
-                    elif menu_selection == "State":
-                        # 待機の処理
-                        pass
-                    elif menu_selection == "Cancel":
-                        # キャンセルの処理
-                        if selected_character:
-                            selected_character.reset_movement()
-                        selected_character = None  # 選択を解除する
-                    show_menu = False
-                    # キャンセル以外の選択時のみ、ここで選択を解除
-                    if menu_selection != "Cancel":
-                        selected_character.has_moved = True  # キャラクターの行動を完了とする
-                        selected_character = None  # 選択を解除する
+                    # 選択したオプションが有効な場合にのみ処理
+                    if menu_selection in menu.enabled_options:
+                        if menu_selection == "Attack":
+                            # 攻撃範囲内のエネミーを取得
+                            attackable_enemies = [
+                                enemy for enemy in enemies
+                                if (enemy.x, enemy.y) in selected_character.get_attack_range()
+                            ]
+                            print(attackable_enemies)
+                            # 攻撃可能なエネミーの名前でポップアップメニューを作成
+                            if attackable_enemies:
+                                enemy_names = [enemy.name for enemy in attackable_enemies]
+                                print(enemy_names)
+                                enemy_selection_menu = PopupMenu(selected_character.x * TILE_SIZE, selected_character.y * TILE_SIZE, enemy_names)
+                                show_menu = False
+
+                        elif menu_selection == "State":
+                            # 待機の処理
+                            selected_character.has_moved = True  # キャラクターの行動を完了とする
+                            selected_character = None  # 選択を解除する
+
+                        elif menu_selection == "Cancel":
+                            # キャンセルの処理
+                            if selected_character:
+                                selected_character.cancel_movement()
+                            selected_character = None  # 選択を解除する
+                        show_menu = False
                 continue  # メニュー表示中は他の処理をスキップ
 
         # プレイヤーターン
@@ -111,11 +124,38 @@ while running:
 
                 # 移動が完了した後にメニューを表示
                 if character_has_moved and not show_menu and selected_character:
-                    menu = PopupMenu(selected_character.rect.x + TILE_SIZE, selected_character.rect.y, ["Attack", "State", "Cancel"])
+                    # 攻撃範囲内のエネミーを取得
+                    attackable_enemies = [
+                        enemy for enemy in enemies
+                        if (enemy.x, enemy.y) in selected_character.get_attack_range()
+                    ]
+                    # 攻撃可能なエネミーがいれば攻撃オプションを有効化
+                    enabled_options = ["State", "Cancel"]
+                    if attackable_enemies:
+                        enabled_options.insert(0, "Attack")  # 攻撃オプションを追加
+
+                    menu = PopupMenu(selected_character.x * TILE_SIZE, selected_character.y * TILE_SIZE, ["Attack", "State", "Cancel"], enabled_options)
                     show_menu = True
                     character_has_moved = False  #  メニュー表示後はフラグをリセット
 
-            
+
+            if enemy_selection_menu:
+                # ユーザーのクリックイベントを待つ
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    selected_enemy_name = enemy_selection_menu.get_selection(pygame.mouse.get_pos())
+                    if selected_enemy_name:
+                        # 選択されたエネミーを取得
+                        selected_enemy = next((enemy for enemy in attackable_enemies if enemy.name == selected_enemy_name), None)
+                        if selected_enemy:
+                            # 戦闘シーンに遷移する処理...
+                            print(f"Entering battle with {selected_enemy.name}")
+                            # エネミー選択メニューを閉じる
+                            enemy_selection_menu = None
+                            # 戦闘シーンへの遷移処理（擬似コード）
+                            selected_character.attack(selected_enemy)
+                            selected_character.has_moved = True  # キャラクターの行動を完了とする
+                            selected_character = None  # 選択を解除する
+
             # ターン自動終了のチェック
             if turn_manager.check_turn_end():
                 turn_manager.end_turn()
@@ -141,6 +181,9 @@ while running:
         enemy.draw(screen)  # エネミーキャラクターを描画
     if show_menu and menu:
         menu.draw(screen)  # ポップアップメニューを描画
+
+    if enemy_selection_menu:
+        enemy_selection_menu.draw(screen)
 
     # 範囲の可視化
     if selected_character:
